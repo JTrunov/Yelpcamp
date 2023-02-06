@@ -3,6 +3,7 @@ const app = express();
 const path = require('path');
 const methodOverride = require('method-override')
 const mongoose = require('mongoose');
+const ejsMate = require('ejs-mate');
 const Campground = require('./models/campgrounds');
 const campgrounds = require('./models/campgrounds');
 const { urlencoded } = require('express');
@@ -18,6 +19,7 @@ async function main() {
 
 main().catch(err => console.log(err));
 
+app.engine('ejs', ejsMate);
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
