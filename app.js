@@ -5,11 +5,11 @@ const methodOverride = require('method-override')
 const mongoose = require('mongoose');
 const ejsMate = require('ejs-mate');
 const Campground = require('./models/campgrounds');
-const campgrounds = require('./models/campgrounds');
 const { urlencoded } = require('express');
 const ExpressError = require('./utils/ExpressError');
 const catchAsync = require('./utils/cathAsync');
 const { createDecipher } = require('crypto');
+const Review = require('./models/review')
 mongoose.set('strictQuery', true)
 
 
@@ -64,6 +64,16 @@ app.delete('/campgrounds/:id', catchAsync(async (req, res) => {
     const { id } = req.params;
     await Campground.findOneAndRemove({ _id: id });
     res.redirect('/campgrounds');
+}))
+
+app.post('/campgrounds/:id/reviews', catchAsync(async (req, res) => {
+    const { id } = req.params;
+    const camp = await Campground.findOne({ _id: id });
+    const review = new Review(req.body.review);
+    camp.reviews.push(review);
+    await review.save();
+    await camp.save();
+    res.redirect(`/campgrounds/${id}`);
 }))
 
 app.get('/campgrounds/:id/edit', catchAsync(async (req, res) => {
