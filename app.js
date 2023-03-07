@@ -11,6 +11,7 @@ const catchAsync = require('./utils/cathAsync');
 const { createDecipher } = require('crypto');
 const Review = require('./models/review')
 mongoose.set('strictQuery', true)
+const campgroundSchema = require('./schemas')
 
 
 // mongoose connection function
@@ -29,6 +30,17 @@ app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride('_method'));
 
+const validateCampground = (req, res, next) => {
+
+    const { error } = campgroundSchema.validate(req.body);
+    if (error) {
+        const msg = error.details.map(el => el.message).join(',');
+        throw new ExpressError(msg, 400);
+    } else {
+        next();
+    }
+}
+
 app.get('/', (req, res) => {
     res.render('home');
 })
@@ -38,8 +50,8 @@ app.get('/campgrounds', catchAsync(async (req, res) => {
     res.render('campgrounds/index', { campgrounds });
 }));
 
-app.post('/campgrounds', catchAsync(async (req, res, next) => {
-    if (!req.body.campground) throw new ExpressError('Invalid campground data', 400);
+app.post('/campgrounds', validateCampground, catchAsync(async (req, res, next) => {
+    // if (!req.body.campground) throw new ExpressError('Invalid campground data', 400);
     const camp = new Campground(req.body.campground);
     await camp.save();
     res.redirect(`/campgrounds/${camp._id}`);
@@ -54,7 +66,7 @@ app.get('/campgrounds/:id', catchAsync(async (req, res) => {
     res.render('campgrounds/show', { camp });
 }))
 
-app.put('/campgrounds/:id', catchAsync(async (req, res) => {
+app.put('/campgrounds/:id', validateCampground, catchAsync(async (req, res) => {
     const { id } = req.params;
     await Campground.findOneAndUpdate({ _id: id }, { ...req.body.campground });
     res.redirect(`/campgrounds/${req.params.id}`);
