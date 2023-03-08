@@ -9,9 +9,9 @@ const { urlencoded } = require('express');
 const ExpressError = require('./utils/ExpressError');
 const catchAsync = require('./utils/cathAsync');
 const { createDecipher } = require('crypto');
-const Review = require('./models/review')
-mongoose.set('strictQuery', true)
-const campgroundSchema = require('./schemas')
+const Review = require('./models/review');
+mongoose.set('strictQuery', true);
+const { campgroundSchema, reviewSchema } = require('./schemas');
 
 
 // mongoose connection function
@@ -41,6 +41,17 @@ const validateCampground = (req, res, next) => {
     }
 }
 
+const validateReview = (req, res, next) => {
+
+    const { error } = reviewSchema.validate(req.body);
+    if (error) {
+        const msg = error.details.map(el => el.message).join(',');
+        throw new ExpressError(msg, 400);
+    } else {
+        next();
+    }
+}
+
 app.get('/', (req, res) => {
     res.render('home');
 })
@@ -62,7 +73,7 @@ app.get('/campgrounds/new', (req, res) => {
 })
 
 app.get('/campgrounds/:id', catchAsync(async (req, res) => {
-    const camp = await Campground.findOne({ _id: req.params.id });
+    const camp = await Campground.findOne({ _id: req.params.id }).populate('reviews');
     res.render('campgrounds/show', { camp });
 }))
 
@@ -74,7 +85,7 @@ app.put('/campgrounds/:id', validateCampground, catchAsync(async (req, res) => {
 
 app.delete('/campgrounds/:id', catchAsync(async (req, res) => {
     const { id } = req.params;
-    await Campground.findOneAndRemove({ _id: id });
+    await Campground.findOneAndDelete({ _id: id });
     res.redirect('/campgrounds');
 }))
 
@@ -85,6 +96,13 @@ app.post('/campgrounds/:id/reviews', catchAsync(async (req, res) => {
     camp.reviews.push(review);
     await review.save();
     await camp.save();
+    res.redirect(`/campgrounds/${id}`);
+}))
+
+app.delete('/campgrounds/:id/reviews/:reviewId', catchAsync(async (req, res) => {
+    const { id, reviewId } = req.params;
+    await Campground.findOneAndUpdate({ _id: id }, { $pull: { reviews: reviewId } });
+    await Review.findOneAndDelete({ _id: reviewId });
     res.redirect(`/campgrounds/${id}`);
 }))
 
