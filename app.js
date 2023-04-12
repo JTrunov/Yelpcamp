@@ -5,14 +5,15 @@ const methodOverride = require('method-override')
 const mongoose = require('mongoose');
 const ejsMate = require('ejs-mate');
 const ExpressError = require('./utils/ExpressError');
-const campgrounds = require('./routers/campgrounds');
-const reviews = require('./routers/reviews');
+const campgroundRoutes = require('./routers/campgrounds');
+const reviewRoutes = require('./routers/reviews');
 mongoose.set('strictQuery', true);
 const session = require('express-session');
 const flash = require('connect-flash');
 const passport = require('passport');
 const LocalStrategy = require('passport-local');
 const User = require('./models/user');
+const userRoutes = require('./routers/users');
 
 // mongoose connection function
 async function main() {
@@ -47,12 +48,13 @@ app.use(flash());
 
 app.use(passport.initialize());
 app.use(passport.session());
-app.use(new LocalStrategy(User.authenticate()));
+passport.use(new LocalStrategy(User.authenticate()));
 
 passport.serializeUser(User.serializeUser());
 passport.deserializeUser(User.deserializeUser());
 
 app.use((req, res, next) => {
+    res.locals.currentUser = req.user;
     res.locals.success = req.flash('success');
     res.locals.error = req.flash('error');
     next();
@@ -62,9 +64,11 @@ app.get('/', (req, res) => {
     res.render('home');
 })
 
-app.use('/campgrounds', campgrounds);
+app.use('/', userRoutes);
 
-app.use('/campgrounds/:id/reviews', reviews);
+app.use('/campgrounds', campgroundRoutes);
+
+app.use('/campgrounds/:id/reviews', reviewRoutes);
 
 app.all('*', (req, res, next) => {
     next(new ExpressError('Page not found', 404));

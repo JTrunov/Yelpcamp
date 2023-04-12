@@ -7,6 +7,7 @@ const catchAsync = require('../utils/cathAsync');
 const campgrounds = require('../routers/campgrounds')
 mongoose.set('strictQuery', true);
 const { campgroundSchema } = require('../schemas');
+const { isLoggedIn } = require('../middleware');
 
 const router = express.Router();
 
@@ -26,7 +27,7 @@ router.get('/', catchAsync(async (req, res) => {
     res.render('campgrounds/index', { campgrounds });
 }));
 
-router.post('/', validateCampground, catchAsync(async (req, res, next) => {
+router.post('/', isLoggedIn, validateCampground, catchAsync(async (req, res, next) => {
     // if (!req.body.campground) throw new ExpressError('Invalid campground data', 400);
     const camp = new Campground(req.body.campground);
     await camp.save();
@@ -34,7 +35,7 @@ router.post('/', validateCampground, catchAsync(async (req, res, next) => {
     res.redirect(`/campgrounds/${camp._id}`);
 }))
 
-router.get('/new', (req, res) => {
+router.get('/new', isLoggedIn, (req, res) => {
     res.render('campgrounds/new');
 })
 
@@ -47,21 +48,21 @@ router.get('/:id', catchAsync(async (req, res) => {
     res.render('campgrounds/show', { camp });
 }))
 
-router.put('/:id', validateCampground, catchAsync(async (req, res) => {
+router.put('/:id', isLoggedIn, validateCampground, catchAsync(async (req, res) => {
     const { id } = req.params;
     await Campground.findOneAndUpdate({ _id: id }, { ...req.body.campground });
     req.flash('success', 'Successfully updated a campground!');
     res.redirect(`/campgrounds/${req.params.id}`);
 }))
 
-router.delete('/:id', catchAsync(async (req, res) => {
+router.delete('/:id', isLoggedIn, catchAsync(async (req, res) => {
     const { id } = req.params;
     await Campground.findOneAndDelete({ _id: id });
     req.flash('success', 'sucessfully deleted a campground!');
     res.redirect('/campgrounds');
 }))
 
-router.get('/:id/edit', catchAsync(async (req, res) => {
+router.get('/:id/edit', isLoggedIn, catchAsync(async (req, res) => {
     const camp = await Campground.findOne({ _id: req.params.id });
     if (!camp) {
         req.flash('error', 'Cannot find a campground!');
@@ -69,5 +70,7 @@ router.get('/:id/edit', catchAsync(async (req, res) => {
     }
     res.render('campgrounds/edit', { camp });
 }))
+
+
 
 module.exports = router;
