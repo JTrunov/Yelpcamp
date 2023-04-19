@@ -4,32 +4,21 @@ const mongoose = require('mongoose');
 const Campground = require('../models/campgrounds');
 const ExpressError = require('../utils/ExpressError');
 const catchAsync = require('../utils/cathAsync');
-const campgrounds = require('../routers/campgrounds')
+const campgrounds = require('../controllers/campgrounds')
 mongoose.set('strictQuery', true);
 const { campgroundSchema } = require('../schemas');
 const { isLoggedIn, isAuthor, validateCampground } = require('../middleware');
+
 
 const router = express.Router();
 
 
 
-router.get('/', catchAsync(async (req, res) => {
-    const campgrounds = await Campground.find({});
-    res.render('campgrounds/index', { campgrounds });
-}));
+router.get('/', catchAsync(campgrounds.index));
 
-router.post('/', isLoggedIn, validateCampground, catchAsync(async (req, res, next) => {
-    // if (!req.body.campground) throw new ExpressError('Invalid campground data', 400);
-    const camp = new Campground(req.body.campground);
-    camp.author = req.user._id;
-    await camp.save();
-    req.flash('success', 'Successfully added campground!!');
-    res.redirect(`/campgrounds/${camp._id}`);
-}))
+router.post('/', isLoggedIn, validateCampground, catchAsync(campgrounds.createCampground))
 
-router.get('/new', isLoggedIn, (req, res) => {
-    res.render('campgrounds/new');
-})
+router.get('/new', isLoggedIn, campgrounds.renderNewForm);
 
 router.get('/:id', catchAsync(async (req, res) => {
     const camp = await Campground.findOne({ _id: req.params.id }).populate({
