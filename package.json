@@ -10,6 +10,7 @@
   "author": "Jenya trunov",
   "license": "ISC",
   "dependencies": {
+    "@mapbox/mapbox-sdk": "^0.15.1",
     "cloudinary": "^1.36.1",
     "connect-flash": "^0.1.1",
     "dotenv": "^16.0.3",
